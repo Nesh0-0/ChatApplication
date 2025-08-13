@@ -2,6 +2,55 @@ const send = document.getElementById('sendBtn');
 const message = document.getElementById('message');
 const chatDiv = document.getElementById('chatDiv');
 
+let lastMessageId = 0;
+
+const addMessagesToTheScreen = (message) => {
+    const h = document.createElement('h6');
+    h.id = 'chatMessage';
+    h.innerText = message;
+    chatDiv.appendChild(h);
+}
+
+
+
+const getMessagesFromDb = async () => {
+    
+    try {
+
+        const token = localStorage.getItem('token');
+
+        const messageDetails = await axios.get('http://localhost:3000/messages/getAllMessages', { headers: { 'Authorization': token } });
+
+        if (!messageDetails.data.success)
+            throw new Error(messageDetails.data.message)
+
+        const allMessages = messageDetails.data.data;
+
+        allMessages.forEach(element => {
+
+            if (lastMessageId < element.id) {
+                
+                const username = element.user.username;
+                const message = element.message;
+                addMessagesToTheScreen(`${username}: ${message}`);
+                lastMessageId = element.id;
+            }
+
+        });
+    }
+    catch (err) {
+        
+        console.log(err);
+    }
+};
+
+setInterval(async () => {
+    const token = localStorage.getItem('token');
+    await getMessagesFromDb(token);
+}, 1000);
+
+
+
 
 
 window.addEventListener('load', async () => {
@@ -17,33 +66,21 @@ window.addEventListener('load', async () => {
         const onlineUsers = onlineDetails.data.data;
 
         onlineUsers.forEach(element => {
-            const h = document.createElement('h6');
-            h.id = 'chatMessage';
-            h.innerText = `${element.username} joined`;
-            chatDiv.appendChild(h);
+            addMessagesToTheScreen(`${element.username} joined`);
+
         });
 
-        const messageDetails = await axios.get('http://localhost:3000/messages/getAllMessages', { headers: { 'Authorization': token}});
-
-        if (!messageDetails.data.success) 
-            throw new Error(messageDetails.data.message)
-
-        const allMessages = messageDetails.data.data;
-
-        allMessages.forEach(element => {
-            const h = document.createElement('h6');
-            h.id = 'chatMessage';
-            const username = element.user.username;
-            const message = element.message;
-            h.innerText = `${username}: ${message}`;
-            chatDiv.appendChild(h);
-        })
+        await getMessagesFromDb();
+        
 
     }
     catch (err) {
         console.log(err);
     }
 });
+
+
+
 
 send.addEventListener('click', async () => {
     const token = localStorage.getItem('token');
@@ -61,14 +98,15 @@ send.addEventListener('click', async () => {
     chatDiv.appendChild(h);
 
     try {
-        const uploadMessageToDb = await axios.post('http://localhost:3000/messages/uploadMessage', {message: text, username}, { headers: { 'Authorization': token } });
-        
+        const uploadMessageToDb = await axios.post('http://localhost:3000/messages/uploadMessage', { message: text, username }, { headers: { 'Authorization': token } });
+
         if (!uploadMessageToDb.data.success) {
             throw new Error(uploadMessageToDb.data.message);
         }
 
         else {
             console.log(uploadMessageToDb.data.message);
+            lastMessageId = uploadMessageToDb.data.data.id;
         }
     }
     catch (err) {
