@@ -19,6 +19,9 @@ const users = sequelize.define('users', {
     },
     password: {
         type: DataTypes.STRING
+    },
+    status: {
+        type: DataTypes.STRING
     }
 },
     { timestamps: false });

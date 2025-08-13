@@ -11,7 +11,21 @@ const login = async (event) => {
             throw new Error(loginDetails.data.message);
         }
 
-        alert(loginDetails.data.message);
+        
+        const token = loginDetails.data.token;
+        
+        localStorage.setItem('token', token);
+        
+        const { username } = loginDetails.data.details;
+        localStorage.setItem('username', username);
+        
+        console.log(username);
+        
+        const updateStatusToOnline = await axios.post('http://localhost:3000/users/updateOnline', {username}, {headers: {'Authorization': token}});
+        
+        // alert(loginDetails.data.message);
+
+        window.location.href = 'chatScreen.html';
 
     }
     catch (err) {
